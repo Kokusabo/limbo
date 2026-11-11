@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>limbo</title>
+<meta name="description" content="a place between. nobody built it. you can stay.">
+<meta name="theme-color" content="#eef3f8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: blob:; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="fonts/fonts.css?v=1">
+<link rel="stylesheet" href="css/style.css?v=1">
+<script type="module" src="js/main.js?v=1"></script>
+</head>
+<body>
+<canvas id="world" aria-hidden="true"></canvas>
+<div class="veil" id="veil" aria-hidden="true"><pre id="veil-log"></pre></div>
+
+<header class="hud hud-top">
+  <a class="mark" href="#top">limbo</a>
+  <button class="snd" id="snd" type="button" aria-pressed="false">sound <span>off</span></button>
+</header>
+<div class="hud hud-bottom" aria-hidden="true">
+  <span id="where">the baths &middot; 000.0 m</span>
+  <span class="hint" id="hint">scroll to walk &middot; hold to look closer</span>
+  <span id="since">here for 00:00:00</span>
+</div>
+
+<main id="top">
+  <section class="st st-0">
+    <h1 class="title">limbo</h1>
+    <p class="sub">you fell asleep somewhere warm.</p>
+    <p class="note">[ layer 0 ]</p>
+  </section>
+
+  <section class="st"><p class="frag at-r at-top">the water is warm.
+it has always been warm.</p></section>
+
+  <section class="st"><p class="frag at-l at-low">nobody built this place.
+it was never finished,
+so it never ended.</p><p class="note at-r at-top">temperature 21.0 &deg;c. always.</p></section>
+
+  <section class="st"><p class="frag at-c at-mid">every hall is the same hall.</p></section>
+
+  <section class="st"><p class="frag at-l at-top">someone left the sky on.</p><p class="note at-r at-low">visitors today: 1</p></section>
+
+  <section class="st"><p class="frag at-r at-mid">a door stands in the grass.
+it opens onto more grass.</p></section>
+
+  <section class="st"><p class="frag at-l at-low">you are not lost.
+lost would mean
+there was somewhere to be.</p></section>
+
+  <section class="st"><p class="frag at-r at-top">the windows face a light
+that has no source.</p><p class="note at-l at-low">exit: not found</p></section>
+
+  <section class="st"><p class="frag at-c at-mid">if you look long enough,
+it looks back.</p></section>
+
+  <section class="st"><p class="frag at-l at-top">the clouds are made of dots.
+so are you, from far enough.</p><p class="note at-r at-low">altitude: unknown</p></section>
+
+  <section class="st st-end">
+    <div class="end">
+      <p class="frag">there is another place.
+it is darker there.</p>
+      <p class="doors">
+        <a class="door" href="https://kokusabo.github.io/present-day/">open the door</a>
+        <a class="door stay" href="#top">stay</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<noscript><p class="noscript">this place needs javascript to exist.</p></noscript>
+</body>
+</html>
