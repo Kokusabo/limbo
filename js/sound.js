@@ -1,6 +1,6 @@
 /* sound.js - the air of the place, built from noise and a few sine waves.
  * The baths have water and drips, the field has wind, the chapel has a choir of tones,
- * the sky has almost nothing. Off until the visitor turns it on. */
+ * the sky has almost nothing. It is on from the first touch, unless the visitor turns it off. */
 
 export function createSound() {
   let ac = null, master = null, verb = null, noiseBuf = null, on = false;
@@ -117,14 +117,17 @@ export function createSound() {
     }, 0.16 + strength * 0.12, false);
   }
 
+  function setOn(v) {
+    if (!ac && !build()) return false;
+    if (ac.state !== 'running') ac.resume();
+    on = v;
+    master.gain.setTargetAtTime(on ? 0.9 : 0, ac.currentTime, 0.6);
+    return on;
+  }
   return {
-    toggle: function () {
-      if (!ac && !build()) return false;
-      if (ac.state === 'suspended') ac.resume();
-      on = !on;
-      master.gain.setTargetAtTime(on ? 0.9 : 0, ac.currentTime, 0.6);
-      return on;
-    },
+    // call from inside a touch or a key press: browsers only let sound start there
+    start: function () { if (!ac || ac.state !== 'running' || !on) setOn(true); },
+    toggle: function () { return setOn(!on); },
     isOn: function () { return on; },
     setZone: setZone, drip: drip, glitch: glitch
   };

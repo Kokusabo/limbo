@@ -5,8 +5,8 @@
  * The walk goes along one path: the baths -> the field -> the chapel -> the sky.
  */
 import * as THREE from '../vendor/three.module.min.js';
-import { makeShrine, featherTexture } from './angel.js?v=4';
-import { buildProps, grassField } from './props.js?v=4';
+import { featherTexture } from './angel.js?v=5';
+import { buildProps, grassField } from './props.js?v=5';
 
 const TAU = Math.PI * 2;
 export function rng(seed) {
@@ -435,11 +435,8 @@ export function createWorld() {
   dust.frustumCulled = false;
   scene.add(dust);
 
-  /* ---- everything that fills the place, and the room where the angel can be seen ---- */
+  /* ---- everything that fills the place ---- */
   const props = buildProps(scene, M, T, R);
-  const shrine = makeShrine(M, T.shaft);
-  shrine.group.position.set(0, -300, 0);
-  scene.add(shrine.group);
   // feathers drifting down here and there, wherever you are
   const drift = [], dfGeo = new THREE.PlaneGeometry(1, 1);
   for (let i = 0; i < 14; i++) {
@@ -511,24 +508,6 @@ export function createWorld() {
     return water;
   }
 
-  // the room under everything, where she can be seen from the front
-  // a blue, misty room, the light only from above, so the white of her stands out
-  const SH = { fog: new THREE.Color('#7f95b8'), hor: new THREE.Color('#9fb2cf'), zen: new THREE.Color('#3e5886'), ccol: new THREE.Color('#c9d5e6') };
-  function updateShrine(lt, time, dt, look) {
-    const k = smooth(0, 9, lt), o = shrine.group.position, far = camera.aspect < 1 ? 1.45 : 1;
-    camera.position.set(o.x + (1.0 - k * 0.8) * far, o.y + 1.0 + k * 0.45, o.z + (5.0 - k * 2.4) * far);
-    target.set(o.x, o.y + 1.75, o.z);
-    camera.lookAt(target);
-    camera.rotateY(-look.x * 0.12); camera.rotateX(-look.y * 0.08);
-    sky.position.copy(camera.position);
-    scene.fog.color.copy(SH.fog); scene.fog.near = 3; scene.fog.far = 24;
-    skyU.uHor.value.copy(SH.hor); skyU.uZen.value.copy(SH.zen); skyU.uCloudCol.value.copy(SH.ccol);
-    skyU.uCloud.value = 0.35; skyU.uGlow.value = 0.5; skyU.uDots.value = 0; skyU.uTime.value = time;
-    hemi.intensity = 0.8; sun.intensity = 2.7;
-    figure.visible = false;
-    drift.forEach(function (f) { f.visible = false; });
-    return shrine.update(time, dt);
-  }
   function update(u, time, dt, look) {
     const p = path.getPointAt(u), tan = path.getTangentAt(u);
     const end = smooth(0.86, 1, u);
@@ -580,7 +559,7 @@ export function createWorld() {
   return {
     scene: scene, camera: camera, update: update, setEyes: setEyes, setPresence: setPresence,
     zoneNameAt: function () { return zone.name; },
-    pick: pick, updateShrine: updateShrine, resetShrine: shrine.reset,
+    pick: pick,
     ripple: function (p) { waterU.uRip.value.set(p.x, p.z, nowT); },
     tvClick: function () { props.tvClick(nowT); }
   };

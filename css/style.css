@@ -1,24 +1,20 @@
 /* palette: the white and pale blue of a place between; dark slate ink for words; one cobalt;
    red only when something tries to wake you.
-   layout: a full-screen world behind; the page above it is a long walk with words on it,
-   each line resting on a patch of mist so it reads over anything the world shows.
-   type: an old book serif for what the place says, a thin mono for what the machine says. */
+   layout: a full-screen world behind; the page above it is a long walk with words on it.
+   every line sits on a white band, the way selected text does, so it reads over anything.
+   type: a tall, narrow book serif for what the place says, a thin mono for what the machine says. */
 :root {
   color-scheme: light;
-  --white: #f6f9fc;
+  --white: #f8fafc;
+  --paper: #fbfcfd;
   --mist: #e4edf5;
   --ice: #c8dbea;
-  --ink: #1d2b3b;
-  --ink-soft: #4a5b70;
+  --ink: #18222f;
+  --ink-soft: #435468;
   --cobalt: #2e5fc4;
   --wake: #c8102e;
-  --halo: rgba(246, 249, 252, 0.95);
-  --halo-soft: rgba(246, 249, 252, 0.7);
-  --fog-a: rgba(246, 249, 252, 0.9);
-  --fog-b: rgba(246, 249, 252, 0.66);
-  --fog-0: rgba(246, 249, 252, 0);
 
-  --f-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+  --f-serif: "Instrument Serif", "Cormorant Garamond", Garamond, "Times New Roman", serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --gutter-l: max(16px, 7vw, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, 7vw, env(safe-area-inset-right, 0px));
@@ -30,7 +26,7 @@ body {
   margin: 0;
   background: var(--white);
   color: var(--ink);
-  font: 300 1rem/1.5 var(--f-serif);
+  font: 400 1rem/1.5 var(--f-serif);
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
   user-select: none;
@@ -41,15 +37,14 @@ body {
 #world { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
 .no-gl body { background: linear-gradient(var(--white), var(--mist) 60%, var(--ice)); }
 .no-gl #world { display: none; }
-.noscript { position: fixed; inset: auto 16px 40%; text-align: center; font-style: italic; font-size: 1.4rem; }
+.noscript { position: fixed; inset: auto 16px 40%; text-align: center; font-style: italic; font-size: 1.6rem; }
 
-/* every line rests on a patch of mist, so it reads over sky, grass or cloud */
-.frag, .sub, .st > .note, .st-0 .note, .whisper, .v-line {
-  background: radial-gradient(closest-side, var(--fog-a), var(--fog-b) 62%, var(--fog-0));
-  padding: 0.8em 1em;
-}
-.frag, .sub, .title, .note, .mark, .snd, .hud-bottom, .door, .whisper, .v-line {
-  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 18px var(--halo-soft);
+/* the white band under every line, broken and repeated per line like a text selection */
+.hl {
+  background: var(--paper);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0.04em 0.24em 0.08em;
 }
 
 /* ---------- waking up ---------- */
@@ -67,35 +62,36 @@ body {
   transition: opacity 1.4s ease, visibility 0s linear 1.4s;
 }
 .veil pre { margin: 0; font: 300 clamp(12px, 1.4vw, 15px)/1.7 var(--f-mono); color: var(--ink-soft); white-space: pre-wrap; }
+.veil-go { color: var(--ink); animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
 .veil.off { opacity: 0; visibility: hidden; }
 .veil.gone { display: none; }
 
-/* ---------- readouts, with a band of mist under them ---------- */
+/* ---------- readouts, each on its own white tag ---------- */
 .hud { position: fixed; left: 0; right: 0; z-index: 10; display: flex; align-items: baseline; justify-content: space-between; gap: 6px 20px; transition: opacity 0.8s ease; }
 .hud-top {
   top: 0;
-  padding-block: max(14px, env(safe-area-inset-top, 0px)) 26px;
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) 0;
   padding-left: max(16px, 2.4vw, env(safe-area-inset-left, 0px));
   padding-right: max(16px, 2.4vw, env(safe-area-inset-right, 0px));
-  background: linear-gradient(var(--fog-a), var(--fog-0));
 }
 .hud-bottom {
   bottom: 0;
-  padding-block: 30px max(14px, env(safe-area-inset-bottom, 0px));
+  padding-block: 0 max(14px, env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, 2.4vw, env(safe-area-inset-left, 0px));
   padding-right: max(16px, 2.4vw, env(safe-area-inset-right, 0px));
-  background: linear-gradient(to top, var(--fog-a), var(--fog-0));
   font: 400 0.72rem/1.4 var(--f-mono);
   color: var(--ink-soft);
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
-.mark { font: italic 400 1.35rem/1 var(--f-serif); color: var(--ink); text-decoration: none; }
+.hud-bottom > span { background: var(--paper); padding: 3px 7px; }
+.mark { font: italic 400 1.5rem/1 var(--f-serif); color: var(--ink); text-decoration: none; background: var(--paper); padding: 2px 8px 4px; }
 .snd {
-  padding: 4px 0;
+  padding: 5px 8px;
   border: 0;
-  background: none;
+  background: var(--paper);
   font: 400 0.74rem/1 var(--f-mono);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
@@ -111,57 +107,56 @@ main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
 .st { position: relative; height: 100vh; }
 .frag, .sub {
   margin: 0;
-  font: italic 400 clamp(1.55rem, 3.4vw, 2.75rem)/1.12 var(--f-serif);
+  font: italic 400 clamp(1.75rem, 3.9vw, 3.1rem)/1.16 var(--f-serif);
+  letter-spacing: 0.005em;
   color: var(--ink);
   white-space: pre-line;
-  text-wrap: balance;
 }
-.frag { position: absolute; margin: -0.8em -1em; max-width: min(calc(24ch + 2em), calc(100vw - 32px + 2em)); }
+.frag { position: absolute; max-width: min(22ch, calc(100vw - 32px)); }
 .note {
   margin: 0;
-  font: 400 0.78rem/1.4 var(--f-mono);
+  font: 400 0.78rem/1.6 var(--f-mono);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
-.st > .note { position: absolute; margin: -0.8em -1em; }
+.note .hl { padding: 0.2em 0.5em; }
+.st > .note { position: absolute; }
+.st-0 > .note { position: static; }
 .at-l { left: var(--gutter-l); }
 .at-r { right: var(--gutter-r); text-align: right; }
 .at-c { left: 50%; transform: translateX(-50%); text-align: center; width: max-content; }
-.frag.at-c { margin-inline: 0; }
 .at-top { top: 22%; }
 .at-mid { top: 42%; }
 .at-low { bottom: 20%; }
 
-.st-0 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.st-0 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; }
 .title {
   position: relative;
   margin: 0;
-  padding: 0 0.1em;
-  font: 300 clamp(4.5rem, 17vw, 13rem)/0.9 var(--f-serif);
-  letter-spacing: 0.08em;
+  padding: 0 0.06em;
+  font: 400 clamp(5.2rem, 20vw, 15rem)/0.86 var(--f-serif);
+  letter-spacing: 0.01em;
   color: var(--ink);
-  text-shadow: 0 0 3px var(--halo), 0 0 14px var(--halo), 0 0 44px var(--halo-soft);
+  text-shadow: 0 0 3px var(--white), 0 0 18px var(--white), 0 0 50px rgba(248, 250, 252, 0.8);
   cursor: default;
 }
+.st-0 .sub { font-size: clamp(1.5rem, 3.2vw, 2.4rem); }
 
 .st-end { display: flex; align-items: center; justify-content: center; }
-.end { display: grid; gap: 22px; justify-items: center; text-align: center; padding-inline: 16px; }
+.end { display: grid; gap: 26px; justify-items: center; text-align: center; padding-inline: 16px; }
 .end .frag { position: relative; max-width: none; }
-.doors {
-  display: flex; gap: 28px; margin: 0; flex-wrap: wrap; justify-content: center;
-  padding: 0.6em 1.6em;
-  background: radial-gradient(closest-side, var(--fog-a), var(--fog-b) 62%, var(--fog-0));
-}
+.doors { display: flex; gap: 14px 22px; margin: 0; flex-wrap: wrap; justify-content: center; }
 .door {
-  font: italic 400 clamp(1.2rem, 2.4vw, 1.6rem)/1.2 var(--f-serif);
+  font: italic 400 clamp(1.35rem, 2.6vw, 1.8rem)/1.2 var(--f-serif);
   color: var(--ink);
   text-decoration: none;
+  background: var(--paper);
+  padding: 0.1em 0.5em 0.16em;
   border-bottom: 1px solid var(--ink-soft);
-  padding-bottom: 2px;
 }
 .door::after { content: "\00a0\2192"; }
 .door.stay::after { content: "\00a0\2191"; }
-.door:hover { color: var(--cobalt); border-color: var(--cobalt); }
+.door:hover { color: var(--paper); background: var(--ink); }
 
 /* ---------- a line that comes and goes ---------- */
 .whisper {
@@ -174,43 +169,13 @@ main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
   max-width: calc(100vw - 32px);
   transform: translateX(-50%);
   text-align: center;
-  font: italic 400 clamp(1.3rem, 2.6vw, 1.9rem)/1.2 var(--f-serif);
+  font: italic 400 clamp(1.45rem, 2.8vw, 2.1rem)/1.2 var(--f-serif);
   color: var(--ink);
   opacity: 0;
   transition: opacity 1s ease;
   pointer-events: none;
 }
 .whisper.on { opacity: 1; }
-
-/* ---------- the angel ---------- */
-.dreaming main, .dreaming .hud { opacity: 0; pointer-events: none; }
-.vision {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  padding-block: 0 max(12vh, env(safe-area-inset-bottom, 0px));
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  cursor: pointer;
-}
-.vision[hidden] { display: none; }
-.v-line {
-  position: relative;
-  margin: 0;
-  max-width: 26ch;
-  text-align: center;
-  font: italic 400 clamp(1.5rem, 3.4vw, 2.6rem)/1.15 var(--f-serif);
-  color: var(--ink);
-  opacity: 0;
-  transition: opacity 1.4s ease;
-  text-wrap: balance;
-}
-.v-line.on { opacity: 1; }
 
 /* ---------- someone tries to wake you ---------- */
 .wake {
@@ -231,18 +196,24 @@ main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
 .wake span { display: block; width: max-content; }
 
 /* ---------- the words glitching ---------- */
-.glitch { animation: jitter 0.11s steps(2) infinite; }
-.glitch::before, .glitch::after {
+.glitch > .hl { animation: jitter 0.11s steps(2) infinite, cut 0.3s steps(1) infinite; text-shadow: -4px 0 rgba(46, 95, 196, 0.85), 4px 0 rgba(156, 200, 242, 0.95); }
+@keyframes jitter { 50% { translate: 3px 0; opacity: 0.75; } }
+@keyframes cut {
+  0% { clip-path: inset(0 0 0 0); }
+  30% { clip-path: inset(18% 0 30% 0); }
+  60% { clip-path: inset(0 0 52% 0); }
+  80% { clip-path: inset(44% 0 0 0); }
+}
+.title.glitch { animation: jitter 0.11s steps(2) infinite; }
+.title.glitch::before, .title.glitch::after {
   content: attr(data-text);
   position: absolute;
   inset: 0;
   padding: inherit;
-  white-space: pre-line;
   pointer-events: none;
 }
-.glitch::before { color: var(--cobalt); animation: cut-a 0.3s steps(1) infinite; }
-.glitch::after { color: #9cc8f2; animation: cut-b 0.42s steps(1) infinite; }
-@keyframes jitter { 50% { translate: 3px 0; opacity: 0.7; } }
+.title.glitch::before { color: var(--cobalt); animation: cut-a 0.3s steps(1) infinite; }
+.title.glitch::after { color: #9cc8f2; animation: cut-b 0.42s steps(1) infinite; }
 @keyframes cut-a {
   0% { clip-path: inset(0 0 70% 0); transform: translate(-7px, 0); }
   25% { clip-path: inset(40% 0 35% 0); transform: translate(9px, 0); }
@@ -256,8 +227,6 @@ main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
   66% { clip-path: inset(30% 0 48% 0); transform: translate(4px, -1px); }
   100% { clip-path: inset(0 0 100% 0); }
 }
-.at-c.glitch { animation-name: jitter-c; }
-@keyframes jitter-c { 0%, 100% { transform: translateX(-50%); } 50% { transform: translateX(calc(-50% + 3px)); opacity: 0.7; } }
 
 @media (max-width: 600px) {
   .hint { display: none; }

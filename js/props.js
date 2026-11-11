@@ -2,7 +2,7 @@
  * hedges, a ruined wall with tall windows, a broken arcade, stairs that go nowhere, cubes
  * that float, columns too big to belong here, an old television, pews, and the angels. */
 import * as THREE from '../vendor/three.module.min.js';
-import { makeAngel } from './angel.js?v=4';
+import { makeAngel } from './angel.js?v=5';
 
 const TAU = Math.PI * 2;
 
@@ -262,18 +262,19 @@ export function buildProps(scene, M, T, R) {
       const p = new THREE.Mesh(new THREE.CylinderGeometry(1.15 * s, 1.25 * s, plinth, 18), M.marble);
       p.position.set(x, plinth / 2, z); scene.add(p);
     }
-    const a = makeAngel(M.marble, M.feather, (x * 13 + z * 7) | 0);
+    const a = makeAngel({ seed: (x * 13 + z * 7) | 0 });
+    a.spread(0.32);
     a.group.scale.setScalar(s); a.group.position.set(x, y, z); a.group.rotation.y = Math.PI;
     a.group.userData.pick = 'angel';
-    a.group.add(proxy(2.8, 2.6, 2.8, 1.2));
+    a.group.add(proxy(1.9, 2.6, 1.7, 1.25));
     scene.add(a.group); targets.push(a.group);
   }
   [[-9, -53], [9, -53]].forEach(function (p) {
     const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), M.marble); b.position.set(p[0], 0.6, p[1]); scene.add(b);
-    statue(p[0], 1.2, p[1], 0.72, 0);
+    statue(p[0], 1.2, p[1], 0.62, 0);
   });
-  statue(-9, 0.45, -132, 0.95, 0.45);
-  statue(0, 0.4, -211, 1.15, 0);
+  statue(-9, 0.45, -132, 0.88, 0.45);
+  statue(0, 0.4, -211, 1.0, 0);
 
   /* ---- an old television in the grass ---- */
   const tvc = document.createElement('canvas'); tvc.width = 40; tvc.height = 30;
