@@ -10,8 +10,8 @@
 <meta name="referrer" content="no-referrer">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="fonts/fonts.css?v=1">
-<link rel="stylesheet" href="css/style.css?v=3">
-<script type="module" src="js/main.js?v=2"></script>
+<link rel="stylesheet" href="css/style.css?v=5">
+<script type="module" src="js/main.js?v=6"></script>
 </head>
 <body>
 <canvas id="world" aria-hidden="true"></canvas>
@@ -23,7 +23,7 @@
 </header>
 <div class="hud hud-bottom" aria-hidden="true">
   <span id="where">the baths &middot; 000.0 m</span>
-  <span class="hint" id="hint">scroll to walk &middot; hold to look closer</span>
+  <span class="hint" id="hint">scroll to walk &middot; touch things &middot; hold to look closer</span>
   <span id="since">here for 00:00:00</span>
 </div>
 
@@ -43,10 +43,10 @@ so it never ended.</p><p class="note at-r at-top">temperature 21.0 &deg;c. alway
 
   <section class="st"><p class="frag at-c at-mid">every hall is the same hall.</p></section>
 
-  <section class="st"><p class="frag at-l at-top">someone left the sky on.</p><p class="note at-r at-low">visitors today: 1</p></section>
+  <section class="st"><p class="frag at-l at-top">someone left the sky on.</p><p class="note at-r at-low" id="visitors">visitors today: 1</p></section>
 
   <section class="st"><p class="frag at-r at-mid">a door stands in the grass.
-it opens onto more grass.</p></section>
+it opens onto more grass.</p><p class="note at-l at-low">she will not turn around.</p></section>
 
   <section class="st"><p class="frag at-l at-low">you are not lost.
 lost would mean
@@ -72,6 +72,13 @@ it is darker there.</p>
     </div>
   </section>
 </main>
+
+<p class="whisper" id="whisper" role="status" aria-live="polite"></p>
+<div class="vision" id="vision" hidden>
+  <p class="v-line" id="v1">she has been crying since before you came.</p>
+  <p class="v-line" id="v2">it was never your fault.</p>
+</div>
+<div class="wake" id="wake" hidden aria-hidden="true"></div>
 
 <noscript><p class="noscript">this place needs javascript to exist.</p></noscript>
 </body>

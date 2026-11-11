@@ -1,12 +1,13 @@
 /* main.js - waking up, walking (the scroll), looking (the mouse), holding still
- * (the ascii view), the glitches, the readouts, and the air. */
+ * (the ascii view), touching things, the glitches, the secrets, the readouts, the air. */
 import * as THREE from '../vendor/three.module.min.js';
-import { createWorld } from './world.js?v=1';
-import { createPost } from './post.js?v=1';
+import { createWorld } from './world.js?v=4';
+import { createPost } from './post.js?v=2';
 import { createSound } from './sound.js?v=1';
 
 const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+const html = document.documentElement;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = function (a, b) { return a + Math.random() * (b - a); };
 const pad = function (n, w) { return String(n).padStart(w, '0'); };
@@ -14,9 +15,16 @@ const pad = function (n, w) { return String(n).padStart(w, '0'); };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 window.scrollTo(0, 0);
 
+/* ---------- it remembers you ---------- */
+let visits = 1;
+try { visits = (parseInt(localStorage.getItem('limbo-visits'), 10) || 0) + 1; localStorage.setItem('limbo-visits', String(visits)); } catch (e) { visits = 1; }
+const visitorsEl = $('#visitors');
+if (visitorsEl && visits > 1) visitorsEl.textContent = 'visitors today: 1. it is always you.';
+
 /* ---------- waking up ---------- */
 const veil = $('#veil'), vlog = $('#veil-log');
-const LINES = ['> sleep detected', '> looking for the way back ........ none', '> loading layer 0', '> there is no layer 1', '> welcome'];
+const LINES = ['> sleep detected', '> looking for the way back ........ none', '> loading layer 0', '> there is no layer 1'];
+if (visits > 1) LINES.push('> visit ' + visits, '> welcome back'); else LINES.push('> welcome');
 let veilDone = false;
 function liftVeil() {
   if (veilDone) return;
@@ -30,7 +38,6 @@ function liftVeil() {
   vlog.textContent += LINES[i] + '\n';
   setTimeout(function () { type(i + 1); }, i === 1 ? 640 : rand(200, 340));
 })(0);
-window.addEventListener('keydown', liftVeil);
 veil.addEventListener('pointerdown', liftVeil);
 
 /* ---------- sound ---------- */
@@ -78,21 +85,48 @@ function glitchWords() {
   setTimeout(function () { el.classList.remove('glitch'); }, rand(260, 620));
 }
 
-/* ---------- the doors at the end ---------- */
+// a line that appears for a moment and goes
+const whisperEl = $('#whisper');
+let whisperTimer = 0;
+function whisper(text, ms) {
+  whisperEl.textContent = text;
+  whisperEl.setAttribute('data-text', text);
+  whisperEl.classList.add('on');
+  scramble(whisperEl);
+  clearTimeout(whisperTimer);
+  whisperTimer = setTimeout(function () { whisperEl.classList.remove('on'); }, ms || 3200);
+}
+
+/* ---------- the readouts ---------- */
+const whereEl = $('#where'), sinceEl = $('#since'), hint = $('#hint');
+const born = performance.now();
+let lastInput = performance.now();
+window.addEventListener('scroll', function () {
+  lastInput = performance.now();
+  if (window.scrollY > 40) hint.classList.add('gone');
+}, { passive: true });
+setTimeout(function () { hint.classList.add('gone'); }, 14000);
+
 let flash = 0;
-$$('a[href="#top"]').forEach(function (a) {
+const secrets = { angel: null, wake: null };
+$$('.door.stay').forEach(function (a) {
   a.addEventListener('click', function (e) {
     e.preventDefault();
     flash = 1;
     window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
   });
 });
-
-/* ---------- the readouts ---------- */
-const whereEl = $('#where'), sinceEl = $('#since'), hint = $('#hint');
-const born = performance.now();
-window.addEventListener('scroll', function () { if (window.scrollY > 40) hint.classList.add('gone'); }, { passive: true });
-setTimeout(function () { hint.classList.add('gone'); }, 14000);
+// the name in the corner takes you up; five quick taps on it and something tries to wake you
+const mark = $('.mark');
+let markTaps = [];
+mark.addEventListener('click', function (e) {
+  e.preventDefault();
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+  const now = performance.now();
+  markTaps = markTaps.filter(function (x) { return now - x < 2500; });
+  markTaps.push(now);
+  if (markTaps.length >= 5 && secrets.wake) { markTaps = []; secrets.wake(); }
+});
 
 /* ---------- the world ---------- */
 const canvas = $('#world');
@@ -101,7 +135,7 @@ try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false, pow
 catch (e) { renderer = null; }
 
 if (!renderer) {
-  document.documentElement.classList.add('no-gl');
+  html.classList.add('no-gl');
   liftVeil();
 } else {
   start();
@@ -114,13 +148,13 @@ async function start() {
   const rt = new THREE.WebGLRenderTarget(2, 2, { magFilter: THREE.NearestFilter, minFilter: THREE.NearestFilter, depthBuffer: true });
   const post = createPost(rt.texture);
   const size = new THREE.Vector2();
-  let quality = 1;
+  let quality = 1, detail = 1;
 
   function resize() {
     const w = window.innerWidth, h = window.innerHeight, dpr = Math.min(window.devicePixelRatio || 1, quality < 0.8 ? 1 : 1.5);
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
-    const sh = Math.round(Math.min(400, Math.max(220, h / 2.3)) * quality), sw = Math.max(2, Math.round(sh * w / h));
+    const sh = Math.round(Math.min(400, Math.max(220, h / 2.3)) * quality * detail), sw = Math.max(2, Math.round(sh * w / h));
     rt.setSize(sw, sh);
     world.camera.aspect = w / h;
     world.camera.fov = w < h ? 78 : 62;
@@ -135,13 +169,14 @@ async function start() {
   const look = { x: 0, y: 0 }, lookT = { x: 0, y: 0 };
   let mouse = false;
   window.addEventListener('pointermove', function (e) {
+    lastInput = performance.now();
     if (e.pointerType !== 'mouse') return;
     mouse = true;
     lookT.x = (e.clientX / window.innerWidth - 0.5) * 2;
     lookT.y = (e.clientY / window.innerHeight - 0.5) * 2;
   }, { passive: true });
 
-  /* the glitch: by itself now and then, or on a click */
+  /* the glitch: by itself now and then, or on a touch */
   let glitch = 0, nextGlitch = rand(6, 10), asciiUntil = 0, eyesUntil = 0, ghostUntil = 0, t = 0, zoneName = 'the baths';
   function kick(s, auto) {
     glitch = Math.max(glitch, s);
@@ -152,12 +187,75 @@ async function start() {
     if (Math.random() < (auto ? 0.45 : 0.2)) ghostUntil = t + rand(0.5, 1.4);
   }
 
-  /* hold still to see what it is made of */
+  /* ---- the angel: she can only be seen from the front in one place ---- */
+  const vision = $('#vision'), v1 = $('#v1'), v2 = $('#v2');
+  let angelT0 = -1, angelStep = 0, nextTearSound = 0, wakeT0 = -1, wakeNext = 0;
+  const clock = function () { return performance.now() / 1000; };
+  function startAngel() {
+    if (angelT0 >= 0 || wakeT0 >= 0 || !veilDone) return;
+    angelT0 = clock(); angelStep = 0; flash = 1;
+    detail = 1.7; resize();
+    world.resetShrine();
+    kick(0.9, false);
+    html.classList.add('dreaming');
+    vision.hidden = false;
+    v1.classList.remove('on'); v2.classList.remove('on');
+  }
+  function closeAngel() { if (angelT0 >= 0 && clock() - angelT0 < 8.55) angelT0 = clock() - 8.55; }
+  function endAngel() {
+    angelT0 = -1; flash = 1;
+    detail = 1; resize();
+    html.classList.remove('dreaming');
+    vision.hidden = true;
+    lastInput = performance.now();
+  }
+  secrets.angel = startAngel;
+
+  /* ---- someone tries to wake you ---- */
+  const wakeEl = $('#wake');
+  function startWake() {
+    if (wakeT0 >= 0 || angelT0 >= 0 || !veilDone) return;
+    wakeT0 = clock(); wakeNext = 0;
+    wakeEl.textContent = '';
+    for (let i = 0; i < 18; i++) { const s = document.createElement('span'); s.textContent = 'WAKE UP'; wakeEl.appendChild(s); }
+    wakeEl.hidden = false;
+  }
+  secrets.wake = startWake;
+
+  /* ---- touching things ---- */
+  const WATER = ['too warm to leave.', 'it never gets cold.', 'the water remembers you.', 'it does not get deeper. it does not need to.'];
+  let titleTaps = [], u = 0;
+  function goThroughDoor() {
+    flash = 1;
+    if (sound.isOn()) sound.glitch(0.6);
+    setTimeout(function () { window.scrollTo(0, 0); u = 0; whisper('it opened onto the beginning.', 3600); }, 380);
+  }
+  function tap(x, y, el) {
+    if (el && el.closest && el.closest('.title')) {
+      const now = performance.now();
+      titleTaps = titleTaps.filter(function (a) { return now - a < 2500; });
+      titleTaps.push(now);
+      if (titleTaps.length >= 5) { titleTaps = []; startAngel(); return; }
+    }
+    const hit = world.pick(x, y);
+    if (hit) {
+      if (hit.name === 'angel') { startAngel(); return; }
+      if (hit.name === 'door') { goThroughDoor(); return; }
+      if (hit.name === 'tv') { world.tvClick(); if (sound.isOn()) sound.glitch(0.5); whisper('ch.07. nobody is watching.'); return; }
+      if (hit.name === 'water') { world.ripple(hit.point); if (sound.isOn()) sound.drip(); whisper(WATER[(Math.random() * WATER.length) | 0]); return; }
+    }
+    kick(rand(0.5, 0.85), false);
+  }
+
+  /* hold still to see what it is made of; a short touch touches */
   let holding = false, holdTimer = 0, down = null;
   function isUI(el) { return el && el.closest && el.closest('a, button, input, textarea, label'); }
   window.addEventListener('pointerdown', function (e) {
-    if (isUI(e.target) || !veilDone) return;
-    down = { x: e.clientX, y: e.clientY, t: performance.now() };
+    lastInput = performance.now();
+    if (!veilDone) return;
+    if (angelT0 >= 0) { if (clock() - angelT0 > 1) closeAngel(); return; }
+    if (isUI(e.target) || wakeT0 >= 0) return;
+    down = { x: e.clientX, y: e.clientY, t: performance.now(), el: e.target };
     clearTimeout(holdTimer);
     holdTimer = setTimeout(function () { holding = true; if (sound.isOn()) sound.glitch(0.3); }, 320);
   });
@@ -167,13 +265,26 @@ async function start() {
   window.addEventListener('pointerup', function () {
     clearTimeout(holdTimer);
     if (holding) holding = false;
-    else if (down && performance.now() - down.t < 320) kick(rand(0.5, 0.85), false);
+    else if (down && performance.now() - down.t < 320) tap(down.x, down.y, down.el);
     down = null;
   });
   window.addEventListener('pointercancel', function () { clearTimeout(holdTimer); holding = false; down = null; });
   window.addEventListener('contextmenu', function (e) { if (holding || down) e.preventDefault(); });
 
-  let u = 0, last = performance.now(), whiteIntro = 1, ascii = 0, nextDrip = 3, hudAt = 0, slow = 0, slowN = 0, skyAttr = '';
+  /* words typed into the place */
+  let typed = '';
+  window.addEventListener('keydown', function (e) {
+    lastInput = performance.now();
+    if (!veilDone) { liftVeil(); return; }
+    if (e.key === 'Escape') { closeAngel(); return; }
+    if (e.key.length === 1 && /[a-z]/i.test(e.key)) {
+      typed = (typed + e.key.toLowerCase()).slice(-12);
+      if (typed.endsWith('wakeup')) { typed = ''; startWake(); }
+      else if (typed.endsWith('angel')) { typed = ''; startAngel(); }
+    }
+  });
+
+  let last = performance.now(), whiteIntro = 1, ascii = 0, nextDrip = 3, hudAt = 0, slow = 0, slowN = 0, idleShown = false;
   // ?debug in the address: handles for looking at the rare moments on purpose
   if (/[?&]debug\b/.test(location.search)) {
     window.__limbo = {
@@ -181,9 +292,14 @@ async function start() {
       ascii: function (d) { asciiUntil = t + d; },
       eyes: function (d) { eyesUntil = t + d; },
       ghost: function (d) { ghostUntil = t + d; },
-      still: function () { nextGlitch = 1e9; }
+      still: function () { nextGlitch = 1e9; },
+      angel: startAngel, wake: startWake, door: goThroughDoor,
+      tap: function (x, y) { tap(x, y, document.elementFromPoint(x, y)); },
+      pick: function (x, y) { const h = world.pick(x, y); return h && h.name; },
+      idle: function () { lastInput = performance.now() - 60000; }
     };
   }
+
   function frame(now) {
     requestAnimationFrame(frame);
     if (document.hidden) { last = now; return; }
@@ -204,27 +320,53 @@ async function start() {
     const k = 1 - Math.exp(-dt * 3);
     look.x += (lookT.x - look.x) * k; look.y += (lookT.y - look.y) * k;
 
-    const info = world.update(u, t, dt, look);
-    zoneName = info.zone.name;
+    let info = null, landed = 0;
+    if (angelT0 >= 0) {
+      const lt = clock() - angelT0;
+      landed = world.updateShrine(lt, t, dt, look);
+      if (lt < 1.4 && angelStep < 5) flash = Math.min(flash, 1 - lt / 1.4);
+      if (angelStep === 0 && lt > 1.6) { angelStep = 1; v1.classList.add('on'); scramble(v1); }
+      if (angelStep === 1 && lt > 3.0) { angelStep = 2; kick(0.7, false); }
+      if (angelStep === 2 && lt > 4.4) { angelStep = 3; v2.classList.add('on'); scramble(v2); }
+      if (angelStep === 3 && lt > 6.2) { angelStep = 4; kick(0.8, false); asciiUntil = t + 0.35; }
+      if (angelStep === 4 && lt > 8.6) { angelStep = 5; flash = 1; }
+      if (lt > 9.1) endAngel();
+    } else {
+      info = world.update(u, t, dt, look);
+      zoneName = info.zone.name;
+    }
 
-    if (veilDone && t > nextGlitch) {
+    // waking up is not possible
+    if (wakeT0 >= 0) {
+      const lt = clock() - wakeT0;
+      Array.prototype.forEach.call(wakeEl.children, function (s) { s.style.visibility = Math.random() < 0.25 ? 'hidden' : ''; s.style.translate = (Math.random() < 0.3 ? rand(-30, 30) : 0) + 'px 0'; });
+      if (lt > wakeNext) { wakeNext = lt + rand(0.12, 0.28); kick(rand(0.6, 1), false); }
+      if (lt > 2.6) { wakeT0 = -1; wakeEl.hidden = true; flash = 0.7; whisper("you can't.", 3000); }
+    }
+
+    if (veilDone && angelT0 < 0 && wakeT0 < 0 && t > nextGlitch) {
       kick(reduced ? rand(0.3, 0.6) : rand(0.45, 1), true);
       nextGlitch = t + (reduced ? rand(16, 30) : rand(8, 16));
     }
     glitch = Math.max(0, glitch - dt * 1.6);
     ascii += ((holding || t < asciiUntil ? 1 : 0) - ascii) * (1 - Math.exp(-dt * 6));
-    world.setEyes(t < eyesUntil);
-    world.setPresence(t < ghostUntil && Math.sin(t * 37) > -0.5, zoneName);
+
+    // if you stay without moving for long enough, someone comes closer
+    const idle = veilDone && angelT0 < 0 && now - lastInput > 40000;
+    if (idle && !idleShown) { idleShown = true; whisper('are you still there?', 4200); }
+    if (!idle) idleShown = false;
+    if (info) {
+      world.setEyes(t < eyesUntil);
+      world.setPresence((t < ghostUntil && Math.sin(t * 37) > -0.5) || idle, zoneName, idle ? 7 : 17);
+    }
 
     if (veilDone) whiteIntro = Math.max(0, whiteIntro - dt / 2.4);
     flash = Math.max(0, flash - dt * 0.7);
-    const passing = Math.exp(-Math.pow((info.z + 215) / 4, 2));
+    const passing = info ? Math.exp(-Math.pow((info.z + 215) / 4, 2)) : 0;
     const U = post.uniforms;
     U.uWhite.value = Math.min(1, Math.max(whiteIntro, flash, passing * 0.92));
-    // the words change colour with the place: dark ink on white, white with a blue glow in the sky
-    const zoneAttr = info.zone.dots > 0.5 ? 'sky' : '';
-    if (zoneAttr !== skyAttr) { skyAttr = zoneAttr; if (zoneAttr) document.documentElement.setAttribute('data-zone', zoneAttr); else document.documentElement.removeAttribute('data-zone'); }
-    U.uTime.value = t; U.uGlitch.value = glitch; U.uAscii.value = ascii; U.uDots.value = info.zone.dots;
+    U.uTime.value = t; U.uGlitch.value = glitch; U.uAscii.value = ascii; U.uDots.value = info ? info.zone.dots : 0;
+    U.uEdge.value = info ? 0.5 : 0.12;
 
     renderer.setRenderTarget(rt);
     renderer.render(world.scene, world.camera);
@@ -233,12 +375,17 @@ async function start() {
 
     // the air follows where you are
     if (sound.isOn()) {
-      const w = { baths: 0, field: 0, chapel: 0, sky: 0 }, z = info.zone;
-      w[z.a.name.slice(4)] += 1 - z.t; w[z.b.name.slice(4)] += z.t;
-      sound.setZone(w);
-      if (w.baths > 0.4 && t > nextDrip) { sound.drip(); nextDrip = t + rand(1.4, 5); }
+      if (angelT0 >= 0) {
+        sound.setZone({ baths: 0, field: 0, chapel: 1.6, sky: 0.2 });
+        if (landed > 0 && t > nextTearSound) { sound.drip(); nextTearSound = t + rand(0.35, 0.8); }
+      } else if (info) {
+        const w = { baths: 0, field: 0, chapel: 0, sky: 0 }, z = info.zone;
+        w[z.a.name.slice(4)] += 1 - z.t; w[z.b.name.slice(4)] += z.t;
+        sound.setZone(w);
+        if (w.baths > 0.4 && t > nextDrip) { sound.drip(); nextDrip = t + rand(1.4, 5); }
+      }
     }
-    if (now - hudAt > 120) {
+    if (info && now - hudAt > 120) {
       hudAt = now;
       whereEl.textContent = zoneName + ' · ' + pad(info.walked.toFixed(1), 5) + ' m';
       const s = Math.floor((now - born) / 1000);

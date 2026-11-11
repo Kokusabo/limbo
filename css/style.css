@@ -1,46 +1,27 @@
-/* palette: the white and pale blue of a place between; dark slate ink for words; one cobalt.
-   layout: a full-screen world behind, the page above it is only a long walk with words on it.
+/* palette: the white and pale blue of a place between; dark slate ink for words; one cobalt;
+   red only when something tries to wake you.
+   layout: a full-screen world behind; the page above it is a long walk with words on it,
+   each line resting on a patch of mist so it reads over anything the world shows.
    type: an old book serif for what the place says, a thin mono for what the machine says. */
 :root {
   color-scheme: light;
   --white: #f6f9fc;
   --mist: #e4edf5;
   --ice: #c8dbea;
-  --ink: #213041;
-  --ink-soft: #55667a;
+  --ink: #1d2b3b;
+  --ink-soft: #4a5b70;
   --cobalt: #2e5fc4;
+  --wake: #c8102e;
   --halo: rgba(246, 249, 252, 0.95);
   --halo-soft: rgba(246, 249, 252, 0.7);
+  --fog-a: rgba(246, 249, 252, 0.9);
+  --fog-b: rgba(246, 249, 252, 0.66);
+  --fog-0: rgba(246, 249, 252, 0);
 
   --f-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --gutter-l: max(16px, 7vw, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, 7vw, env(safe-area-inset-right, 0px));
-}
-
-/* up in the sky the words turn white with a blue glow, so they read on the dots */
-html[data-zone="sky"] {
-  --ink: #ffffff;
-  --ink-soft: #eef4ff;
-  --halo: rgba(8, 28, 104, 0.98);
-  --halo-soft: rgba(8, 28, 104, 0.72);
-}
-/* a soft patch of deeper blue behind the last words, so white clouds passing behind them don't swallow them */
-.end { position: relative; }
-.end::before {
-  content: "";
-  position: absolute;
-  inset: -18% -22%;
-  z-index: -1;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(8, 28, 104, 0.5), rgba(8, 28, 104, 0.28) 55%, rgba(8, 28, 104, 0));
-  opacity: 0;
-  transition: opacity 1.2s ease;
-  pointer-events: none;
-}
-html[data-zone="sky"] .end::before { opacity: 1; }
-.frag, .sub, .title, .note, .mark, .snd, .hud-bottom, .door {
-  transition: color 0.9s ease, text-shadow 0.9s ease, border-color 0.9s ease;
 }
 
 * { box-sizing: border-box; }
@@ -62,6 +43,15 @@ body {
 .no-gl #world { display: none; }
 .noscript { position: fixed; inset: auto 16px 40%; text-align: center; font-style: italic; font-size: 1.4rem; }
 
+/* every line rests on a patch of mist, so it reads over sky, grass or cloud */
+.frag, .sub, .st > .note, .st-0 .note, .whisper, .v-line {
+  background: radial-gradient(closest-side, var(--fog-a), var(--fog-b) 62%, var(--fog-0));
+  padding: 0.8em 1em;
+}
+.frag, .sub, .title, .note, .mark, .snd, .hud-bottom, .door, .whisper, .v-line {
+  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 18px var(--halo-soft);
+}
+
 /* ---------- waking up ---------- */
 .veil {
   position: fixed;
@@ -80,36 +70,36 @@ body {
 .veil.off { opacity: 0; visibility: hidden; }
 .veil.gone { display: none; }
 
-/* ---------- readouts ---------- */
-.hud { position: fixed; left: 0; right: 0; z-index: 10; display: flex; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+/* ---------- readouts, with a band of mist under them ---------- */
+.hud { position: fixed; left: 0; right: 0; z-index: 10; display: flex; align-items: baseline; justify-content: space-between; gap: 6px 20px; transition: opacity 0.8s ease; }
 .hud-top {
   top: 0;
-  padding-block: max(14px, env(safe-area-inset-top, 0px)) 8px;
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) 26px;
   padding-left: max(16px, 2.4vw, env(safe-area-inset-left, 0px));
   padding-right: max(16px, 2.4vw, env(safe-area-inset-right, 0px));
+  background: linear-gradient(var(--fog-a), var(--fog-0));
 }
 .hud-bottom {
   bottom: 0;
-  padding-block: 8px max(14px, env(safe-area-inset-bottom, 0px));
+  padding-block: 30px max(14px, env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, 2.4vw, env(safe-area-inset-left, 0px));
   padding-right: max(16px, 2.4vw, env(safe-area-inset-right, 0px));
-  font: 300 0.72rem/1.4 var(--f-mono);
+  background: linear-gradient(to top, var(--fog-a), var(--fog-0));
+  font: 400 0.72rem/1.4 var(--f-mono);
   color: var(--ink-soft);
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
   pointer-events: none;
 }
-.mark { font: italic 400 1.35rem/1 var(--f-serif); color: var(--ink); text-decoration: none; text-shadow: 0 0 2px var(--halo), 0 0 10px var(--halo), 0 0 20px var(--halo-soft); }
+.mark { font: italic 400 1.35rem/1 var(--f-serif); color: var(--ink); text-decoration: none; }
 .snd {
   padding: 4px 0;
   border: 0;
   background: none;
-  font: 300 0.74rem/1 var(--f-mono);
+  font: 400 0.74rem/1 var(--f-mono);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
   cursor: pointer;
-  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
 }
 .snd:hover { color: var(--ink); }
 .snd[aria-pressed="true"] { color: var(--cobalt); }
@@ -117,60 +107,128 @@ body {
 .hint.gone { opacity: 0; }
 
 /* ---------- the walk ---------- */
-main { position: relative; z-index: 2; }
+main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
 .st { position: relative; height: 100vh; }
 .frag, .sub {
   margin: 0;
-  font: italic 300 clamp(1.55rem, 3.4vw, 2.75rem)/1.12 var(--f-serif);
+  font: italic 400 clamp(1.55rem, 3.4vw, 2.75rem)/1.12 var(--f-serif);
   color: var(--ink);
   white-space: pre-line;
   text-wrap: balance;
-  text-shadow: 0 0 2px var(--halo), 0 0 7px var(--halo), 0 0 18px var(--halo), 0 0 36px var(--halo-soft);
 }
-.frag { position: absolute; max-width: min(24ch, calc(100vw - 32px)); }
+.frag { position: absolute; margin: -0.8em -1em; max-width: min(calc(24ch + 2em), calc(100vw - 32px + 2em)); }
 .note {
   margin: 0;
-  font: 300 0.78rem/1.4 var(--f-mono);
+  font: 400 0.78rem/1.4 var(--f-mono);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
-  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
 }
-.st > .note { position: absolute; }
+.st > .note { position: absolute; margin: -0.8em -1em; }
 .at-l { left: var(--gutter-l); }
 .at-r { right: var(--gutter-r); text-align: right; }
 .at-c { left: 50%; transform: translateX(-50%); text-align: center; width: max-content; }
+.frag.at-c { margin-inline: 0; }
 .at-top { top: 22%; }
 .at-mid { top: 42%; }
 .at-low { bottom: 20%; }
 
-.st-0 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.st-0 { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
 .title {
   position: relative;
   margin: 0;
+  padding: 0 0.1em;
   font: 300 clamp(4.5rem, 17vw, 13rem)/0.9 var(--f-serif);
   letter-spacing: 0.08em;
-  margin-right: -0.08em;
   color: var(--ink);
-  text-shadow: 0 0 3px var(--halo), 0 0 12px var(--halo), 0 0 44px var(--halo-soft);
+  text-shadow: 0 0 3px var(--halo), 0 0 14px var(--halo), 0 0 44px var(--halo-soft);
+  cursor: default;
 }
-.st-0 .note { margin-top: 10px; }
 
 .st-end { display: flex; align-items: center; justify-content: center; }
-.end { display: grid; gap: 28px; justify-items: center; text-align: center; padding-inline: 16px; }
+.end { display: grid; gap: 22px; justify-items: center; text-align: center; padding-inline: 16px; }
 .end .frag { position: relative; max-width: none; }
-.doors { display: flex; gap: 28px; margin: 0; flex-wrap: wrap; justify-content: center; }
+.doors {
+  display: flex; gap: 28px; margin: 0; flex-wrap: wrap; justify-content: center;
+  padding: 0.6em 1.6em;
+  background: radial-gradient(closest-side, var(--fog-a), var(--fog-b) 62%, var(--fog-0));
+}
 .door {
   font: italic 400 clamp(1.2rem, 2.4vw, 1.6rem)/1.2 var(--f-serif);
   color: var(--ink);
   text-decoration: none;
   border-bottom: 1px solid var(--ink-soft);
   padding-bottom: 2px;
-  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 18px var(--halo-soft);
 }
 .door::after { content: "\00a0\2192"; }
 .door.stay::after { content: "\00a0\2191"; }
 .door:hover { color: var(--cobalt); border-color: var(--cobalt); }
-html[data-zone="sky"] .door:hover { color: #cfe0ff; border-color: #cfe0ff; }
+
+/* ---------- a line that comes and goes ---------- */
+.whisper {
+  position: fixed;
+  z-index: 12;
+  left: 50%;
+  bottom: 22%;
+  margin: 0;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  transform: translateX(-50%);
+  text-align: center;
+  font: italic 400 clamp(1.3rem, 2.6vw, 1.9rem)/1.2 var(--f-serif);
+  color: var(--ink);
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+.whisper.on { opacity: 1; }
+
+/* ---------- the angel ---------- */
+.dreaming main, .dreaming .hud { opacity: 0; pointer-events: none; }
+.vision {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-block: 0 max(12vh, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  cursor: pointer;
+}
+.vision[hidden] { display: none; }
+.v-line {
+  position: relative;
+  margin: 0;
+  max-width: 26ch;
+  text-align: center;
+  font: italic 400 clamp(1.5rem, 3.4vw, 2.6rem)/1.15 var(--f-serif);
+  color: var(--ink);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  text-wrap: balance;
+}
+.v-line.on { opacity: 1; }
+
+/* ---------- someone tries to wake you ---------- */
+.wake {
+  position: fixed;
+  inset: 0;
+  z-index: 31;
+  padding-block: max(10vh, env(safe-area-inset-top, 0px)) 0;
+  padding-left: max(16px, 5vw, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  overflow: hidden;
+  pointer-events: none;
+  font: 400 clamp(1.3rem, 4vw, 2.8rem)/1 var(--f-mono);
+  letter-spacing: 0.02em;
+  color: var(--wake);
+  text-shadow: 3px 0 rgba(46, 95, 196, 0.5);
+}
+.wake[hidden] { display: none; }
+.wake span { display: block; width: max-content; }
 
 /* ---------- the words glitching ---------- */
 .glitch { animation: jitter 0.11s steps(2) infinite; }
@@ -178,6 +236,7 @@ html[data-zone="sky"] .door:hover { color: #cfe0ff; border-color: #cfe0ff; }
   content: attr(data-text);
   position: absolute;
   inset: 0;
+  padding: inherit;
   white-space: pre-line;
   pointer-events: none;
 }

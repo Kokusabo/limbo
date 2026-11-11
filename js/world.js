@@ -5,6 +5,8 @@
  * The walk goes along one path: the baths -> the field -> the chapel -> the sky.
  */
 import * as THREE from '../vendor/three.module.min.js';
+import { makeShrine, featherTexture } from './angel.js?v=4';
+import { buildProps, grassField } from './props.js?v=4';
 
 const TAU = Math.PI * 2;
 export function rng(seed) {
@@ -77,7 +79,7 @@ function makeTextures() {
     for (let i = 0; i < 4; i++) { x.fillRect(i * 16 + 15, 0, 1, h); x.fillRect(0, i * 16 + 15, w, 1); }
   });
   T.grass = canvasTexture(64, 64, function (x, w, h) {
-    const P = ['#5b7a37', '#678740', '#516f32', '#728f49', '#7c8d4c', '#4b6630', '#6b8044'];
+    const P = ['#7f9a5a', '#86a35f', '#77924f', '#90aa66', '#9aaf6e', '#6e8a4a', '#a2b675'];
     for (let py = 0; py < h; py++) for (let px = 0; px < w; px++) {
       x.fillStyle = P[(R() * R() * P.length * 1.6) % P.length | 0]; x.fillRect(px, py, 1, 1);
     }
@@ -200,8 +202,8 @@ function instanced(geo, mat, places, y) {
 const ZONES = [
   { z: 12, name: 'the baths', fog: '#dce8f1', near: 5, far: 64, hor: '#e8f0f6', zen: '#c3d6e6', cloud: 0.25, ccol: '#f3f7fa', glow: 0.15, dots: 0, hemi: 2.7, sun: 1.6 },
   { z: -52, name: 'the baths', fog: '#dce8f1', near: 5, far: 64, hor: '#e8f0f6', zen: '#c3d6e6', cloud: 0.25, ccol: '#f3f7fa', glow: 0.15, dots: 0, hemi: 2.7, sun: 1.6 },
-  { z: -70, name: 'the field', fog: '#c9cdcd', near: 16, far: 150, hor: '#c9cdce', zen: '#737a80', cloud: 0.9, ccol: '#e9ecec', glow: 0.55, dots: 0, hemi: 2.1, sun: 1.2 },
-  { z: -140, name: 'the field', fog: '#c9cdcd', near: 16, far: 150, hor: '#c9cdce', zen: '#737a80', cloud: 0.9, ccol: '#e9ecec', glow: 0.55, dots: 0, hemi: 2.1, sun: 1.2 },
+  { z: -70, name: 'the field', fog: '#c9cdcd', near: 14, far: 120, hor: '#c9cdce', zen: '#737a80', cloud: 0.9, ccol: '#e9ecec', glow: 0.55, dots: 0, hemi: 2.1, sun: 1.2 },
+  { z: -140, name: 'the field', fog: '#c9cdcd', near: 14, far: 120, hor: '#c9cdce', zen: '#737a80', cloud: 0.9, ccol: '#e9ecec', glow: 0.55, dots: 0, hemi: 2.1, sun: 1.2 },
   { z: -154, name: 'the chapel', fog: '#eef3f8', near: 6, far: 72, hor: '#f2f6fa', zen: '#dfe8f1', cloud: 0.3, ccol: '#ffffff', glow: 0.45, dots: 0, hemi: 2.9, sun: 1.4 },
   { z: -207, name: 'the chapel', fog: '#eef3f8', near: 6, far: 72, hor: '#f2f6fa', zen: '#dfe8f1', cloud: 0.3, ccol: '#ffffff', glow: 0.45, dots: 0, hemi: 2.9, sun: 1.4 },
   { z: -224, name: 'the sky', fog: '#f6f9fc', near: 30, far: 260, hor: '#dbe8fa', zen: '#3a77d6', cloud: 0, ccol: '#ffffff', glow: 0.2, dots: 1, hemi: 3, sun: 1.6 }
@@ -263,6 +265,7 @@ const WATER_FRAG = `
 uniform sampler2D map;
 uniform float uTime;
 uniform vec3 uTint;
+uniform vec3 uRip;
 #include <fog_pars_fragment>
 varying vec3 vW;
 float caus(vec2 p, float t) {
@@ -273,9 +276,13 @@ float caus(vec2 p, float t) {
 void main() {
   vec2 p = vW.xz;
   vec2 wob = vec2(sin(p.y * 1.3 + uTime * 1.1), cos(p.x * 1.1 + uTime * 0.9)) * 0.07;
+  // a ring spreading from where the water was touched
+  float age = uTime - uRip.z, rd = distance(p, uRip.xy);
+  float ring = (age > 0.0 && rd < age * 3.0) ? sin(rd * 6.0 - age * 8.0) * exp(-age * 1.2) * exp(-rd * 0.25) : 0.0;
+  wob += normalize(p - uRip.xy + 0.0001) * ring * 0.14;
   vec3 tile = texture2D(map, (p + wob) * 0.25).rgb;
   float c = caus(p * 0.9 + wob * 3.0, uTime * 0.8) + caus(p * 1.7 - wob * 2.0 + 3.0, uTime * 1.1) * 0.6;
-  vec3 col = tile * uTint + vec3(0.85, 1.0, 1.0) * c * 0.32;
+  vec3 col = tile * uTint + vec3(0.85, 1.0, 1.0) * (c * 0.32 + max(ring, 0.0) * 0.12);
   gl_FragColor = vec4(col, 1.0);
   #include <fog_fragment>
 }`;
@@ -302,7 +309,8 @@ export function createWorld() {
     leaves: new THREE.MeshLambertMaterial({ map: T.leaves, flatShading: true }),
     window: new THREE.MeshBasicMaterial({ map: T.window, fog: false }),
     glow: new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }),
-    ghost: new THREE.MeshBasicMaterial({ color: 0x8c9db0 })
+    ghost: new THREE.MeshBasicMaterial({ color: 0x8c9db0 }),
+    feather: new THREE.MeshLambertMaterial({ map: featherTexture(), alphaTest: 0.5, side: THREE.DoubleSide })
   };
   T.flute.repeat.set(2, 1);
 
@@ -317,9 +325,8 @@ export function createWorld() {
   scene.add(sky);
 
   // grass everywhere, except where the pool goes down
-  [[-340, -7, 80, -300], [7, 340, 80, -300], [-7, 7, 80, -6], [-7, 7, -50, -300]].forEach(function (r) {
-    scene.add(new THREE.Mesh(floor(r[0], r[1], r[2], r[3], -0.02, 0.5), M.grass));
-  });
+  scene.add(grassField([[-340, -7, 80, -300], [7, 340, 80, -300], [-7, 7, 80, -6], [-7, 7, -50, -300]],
+    new THREE.MeshLambertMaterial({ map: T.grass, vertexColors: true })));
 
   /* ---- the baths ---- */
   const PX = 7, PZ0 = -6, PZ1 = -50, DEPTH = -1.6;
@@ -332,12 +339,13 @@ export function createWorld() {
   scene.add(new THREE.Mesh(wall(-PX, PZ0, PX, PZ0, DEPTH, 0, 0.25, [0, 0, -1]), M.pool));
   scene.add(new THREE.Mesh(wall(-PX, PZ1, PX, PZ1, DEPTH, 0, 0.25, [0, 0, 1]), M.pool));
   // the bottom, with water light moving over it
-  const waterU = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uTint: { value: new THREE.Color('#c4f0ee') } }]);
+  const waterU = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 }, uTint: { value: new THREE.Color('#c4f0ee') }, uRip: { value: new THREE.Vector3(0, 0, -100) } }]);
   waterU.map = { value: T.pool };
   const waterMat = new THREE.ShaderMaterial({ uniforms: waterU, vertexShader: WATER_VERT, fragmentShader: WATER_FRAG, fog: true });
   scene.add(new THREE.Mesh(floor(-PX, PX, PZ0, PZ1, DEPTH, 1), waterMat));
   const surface = new THREE.Mesh(floor(-PX, PX, PZ0, PZ1, -0.22, 1),
     new THREE.MeshBasicMaterial({ color: 0xe8f8f8, transparent: true, opacity: 0.2, depthWrite: false }));
+  surface.userData.pick = 'water';
   scene.add(surface);
   // the coping round the pool
   const coping = new THREE.BoxGeometry(1, 0.12, 1);
@@ -359,7 +367,7 @@ export function createWorld() {
   // urns at the corners of the pool
   const urn = new THREE.LatheGeometry([[0, 0], [0.45, 0], [0.5, 0.1], [0.32, 0.25], [0.3, 0.5], [0.55, 0.9], [0.62, 1.2], [0.5, 1.55], [0.36, 1.7], [0.48, 1.85], [0.48, 1.95], [0, 1.95]].map(function (p) { return new THREE.Vector2(p[0], p[1]); }), 14);
   const plinth = new THREE.BoxGeometry(1, 1.2, 1);
-  [[-9, -3], [9, -3], [-9, -53], [9, -53]].forEach(function (p) {
+  [[-9, -3], [9, -3]].forEach(function (p) {
     const b = new THREE.Mesh(plinth, M.marble); b.position.set(p[0], 0.6, p[1]); scene.add(b);
     const u = new THREE.Mesh(urn, M.marble); u.position.set(p[0], 1.2, p[1]); scene.add(u);
   });
@@ -383,6 +391,9 @@ export function createWorld() {
   const light = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 4.2), M.glow); light.position.set(0, 2.1, 0);
   door.add(l, r, lintel, light);
   door.position.set(-21, 0, -121); door.rotation.y = 0.55;
+  door.userData.pick = 'door';
+  door.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(4, 5.2, 2), new THREE.MeshBasicMaterial({ visible: false })), { visible: false }));
+  door.children[door.children.length - 1].position.y = 2.4;
   scene.add(door);
 
   /* ---- the chapel ---- */
@@ -424,6 +435,20 @@ export function createWorld() {
   dust.frustumCulled = false;
   scene.add(dust);
 
+  /* ---- everything that fills the place, and the room where the angel can be seen ---- */
+  const props = buildProps(scene, M, T, R);
+  const shrine = makeShrine(M, T.shaft);
+  shrine.group.position.set(0, -300, 0);
+  scene.add(shrine.group);
+  // feathers drifting down here and there, wherever you are
+  const drift = [], dfGeo = new THREE.PlaneGeometry(1, 1);
+  for (let i = 0; i < 14; i++) {
+    const f = new THREE.Mesh(dfGeo, M.feather);
+    f.scale.set(0.09, 0.3, 1); f.visible = false;
+    f.userData = { v: 0.25 + R() * 0.3, p: R() * TAU, live: false };
+    scene.add(f); drift.push(f);
+  }
+
   /* ---- someone, sometimes ---- */
   const figure = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 1.0, 4, 8), M.ghost); body.position.y = 0.95;
@@ -453,10 +478,11 @@ export function createWorld() {
   }
   // someone stands a little way ahead, where you are walking; on the water if that is where it lands
   const fwd = new THREE.Vector3();
-  function setPresence(on, zoneName) {
+  function setPresence(on, zoneName, dist) {
+    dist = dist || 17;
     if (on && !figure.visible && zoneName !== 'the sky') {
       camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
-      const x = camera.position.x + fwd.x * 17, z = camera.position.z + fwd.z * 17;
+      const x = camera.position.x + fwd.x * dist, z = camera.position.z + fwd.z * dist;
       const inPool = x > -PX && x < PX && z < PZ0 && z > PZ1;
       figure.position.set(x, inPool ? -0.22 : 0, z);
     }
@@ -464,7 +490,45 @@ export function createWorld() {
   }
 
   const tmp = new THREE.Vector3(), target = new THREE.Vector3();
-  let zone = zoneAt(12);
+  let zone = zoneAt(12), nowT = 0;
+
+  // what is under the pointer: an angel, the door, the television, the water
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), pickable = props.targets.concat([door, surface]);
+  ray.far = 70;
+  function pick(cx, cy) {
+    ndc.set(cx / window.innerWidth * 2 - 1, -(cy / window.innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hits = ray.intersectObjects(pickable, true);
+    let water = null;
+    for (let i = 0; i < hits.length; i++) {
+      let o = hits[i].object;
+      while (o && !o.userData.pick) o = o.parent;
+      if (!o) continue;
+      // the water lies in front of everything at the baths, so anything else along the ray wins
+      if (o.userData.pick === 'water') { if (!water) water = { name: 'water', point: hits[i].point }; continue; }
+      return { name: o.userData.pick, point: hits[i].point };
+    }
+    return water;
+  }
+
+  // the room under everything, where she can be seen from the front
+  // a blue, misty room, the light only from above, so the white of her stands out
+  const SH = { fog: new THREE.Color('#7f95b8'), hor: new THREE.Color('#9fb2cf'), zen: new THREE.Color('#3e5886'), ccol: new THREE.Color('#c9d5e6') };
+  function updateShrine(lt, time, dt, look) {
+    const k = smooth(0, 9, lt), o = shrine.group.position, far = camera.aspect < 1 ? 1.45 : 1;
+    camera.position.set(o.x + (1.0 - k * 0.8) * far, o.y + 1.0 + k * 0.45, o.z + (5.0 - k * 2.4) * far);
+    target.set(o.x, o.y + 1.75, o.z);
+    camera.lookAt(target);
+    camera.rotateY(-look.x * 0.12); camera.rotateX(-look.y * 0.08);
+    sky.position.copy(camera.position);
+    scene.fog.color.copy(SH.fog); scene.fog.near = 3; scene.fog.far = 24;
+    skyU.uHor.value.copy(SH.hor); skyU.uZen.value.copy(SH.zen); skyU.uCloudCol.value.copy(SH.ccol);
+    skyU.uCloud.value = 0.35; skyU.uGlow.value = 0.5; skyU.uDots.value = 0; skyU.uTime.value = time;
+    hemi.intensity = 0.8; sun.intensity = 2.7;
+    figure.visible = false;
+    drift.forEach(function (f) { f.visible = false; });
+    return shrine.update(time, dt);
+  }
   function update(u, time, dt, look) {
     const p = path.getPointAt(u), tan = path.getTangentAt(u);
     const end = smooth(0.86, 1, u);
@@ -484,6 +548,24 @@ export function createWorld() {
     skyU.uCloud.value = zone.cloud; skyU.uGlow.value = zone.glow; skyU.uDots.value = zone.dots; skyU.uTime.value = time;
     hemi.intensity = zone.hemi; sun.intensity = zone.sun;
     waterU.uTime.value = time;
+    nowT = time;
+    props.update(time, dt);
+    // feathers fall in front of you and are replaced when they are gone
+    const side = new THREE.Vector3();
+    camera.getWorldDirection(fwd);
+    side.set(-fwd.z, 0, fwd.x).normalize();
+    drift.forEach(function (f) {
+      const d = f.userData;
+      if (!d.live || f.position.y < camera.position.y - 4 || f.position.distanceTo(camera.position) > 26) {
+        f.position.copy(camera.position).addScaledVector(fwd, 5 + R() * 12).addScaledVector(side, (R() - 0.5) * 12);
+        f.position.y = camera.position.y + (d.live ? 3 + R() * 4 : R() * 7 - 2);
+        d.live = true;
+      }
+      f.position.y -= d.v * dt;
+      f.position.x += Math.sin(time * 0.9 + d.p) * dt * 0.3;
+      f.rotation.set(Math.sin(time + d.p) * 0.6, time * 0.4 + d.p, Math.cos(time * 0.7 + d.p) * 0.8);
+      f.visible = zone.dots < 0.5;
+    });
 
     for (let i = 0; i < DUST; i++) {
       dustPos[i * 3 + 1] += Math.sin(time * 0.3 + dustSeed[i]) * dt * 0.08 + dt * 0.05;
@@ -495,5 +577,11 @@ export function createWorld() {
     return { zone: zone, walked: u * total, end: end, z: p.z };
   }
 
-  return { scene: scene, camera: camera, update: update, setEyes: setEyes, setPresence: setPresence, zoneNameAt: function () { return zone.name; } };
+  return {
+    scene: scene, camera: camera, update: update, setEyes: setEyes, setPresence: setPresence,
+    zoneNameAt: function () { return zone.name; },
+    pick: pick, updateShrine: updateShrine, resetShrine: shrine.reset,
+    ripple: function (p) { waterU.uRip.value.set(p.x, p.z, nowT); },
+    tvClick: function () { props.tvClick(nowT); }
+  };
 }

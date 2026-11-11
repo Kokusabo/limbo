@@ -49,7 +49,7 @@ void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const FRAG = `
 uniform sampler2D tScene, tGlyph;
 uniform vec2 uRes, uSceneRes;
-uniform float uTime, uGlitch, uAscii, uCell, uGlyphN, uGlyphAspect, uWhite, uDots, uDotPx;
+uniform float uTime, uGlitch, uAscii, uCell, uGlyphN, uGlyphAspect, uWhite, uDots, uDotPx, uEdge;
 varying vec2 vUv;
 float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 vec3 sceneAt(vec2 uv) { return linearToOutputTexel(texture2D(tScene, clamp(uv, 0.001, 0.999))).rgb; }
@@ -104,7 +104,7 @@ void main() {
   }
   // white mist at the edges, a little grain, and the white of waking up
   vec2 q = (vUv - 0.5) * vec2(uRes.x / uRes.y, 1.0);
-  col = mix(col, vec3(0.97, 0.982, 0.995), smoothstep(0.5, 1.15, length(q)) * 0.5);
+  col = mix(col, vec3(0.97, 0.982, 0.995), smoothstep(0.5, 1.15, length(q)) * uEdge);
   col += (h1(gl_FragCoord.xy + tick) - 0.5) * 0.016;
   col = mix(col, vec3(0.975, 0.985, 0.996), uWhite);
   gl_FragColor = vec4(col, 1.0);
@@ -117,7 +117,7 @@ export function createPost(sceneTexture) {
     uRes: { value: new THREE.Vector2(1, 1) }, uSceneRes: { value: new THREE.Vector2(1, 1) },
     uTime: { value: 0 }, uGlitch: { value: 0 }, uAscii: { value: 0 }, uWhite: { value: 1 },
     uCell: { value: 12 }, uGlyphN: { value: glyph.count }, uGlyphAspect: { value: glyph.aspect },
-    uDots: { value: 0 }, uDotPx: { value: 6 }
+    uDots: { value: 0 }, uDotPx: { value: 6 }, uEdge: { value: 0.5 }
   };
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2),
     new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false }));
