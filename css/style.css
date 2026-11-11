@@ -10,11 +10,37 @@
   --ink-soft: #55667a;
   --cobalt: #2e5fc4;
   --halo: rgba(246, 249, 252, 0.95);
+  --halo-soft: rgba(246, 249, 252, 0.7);
 
   --f-serif: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   --gutter-l: max(16px, 7vw, env(safe-area-inset-left, 0px));
   --gutter-r: max(16px, 7vw, env(safe-area-inset-right, 0px));
+}
+
+/* up in the sky the words turn white with a blue glow, so they read on the dots */
+html[data-zone="sky"] {
+  --ink: #ffffff;
+  --ink-soft: #eef4ff;
+  --halo: rgba(8, 28, 104, 0.98);
+  --halo-soft: rgba(8, 28, 104, 0.72);
+}
+/* a soft patch of deeper blue behind the last words, so white clouds passing behind them don't swallow them */
+.end { position: relative; }
+.end::before {
+  content: "";
+  position: absolute;
+  inset: -18% -22%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(8, 28, 104, 0.5), rgba(8, 28, 104, 0.28) 55%, rgba(8, 28, 104, 0));
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  pointer-events: none;
+}
+html[data-zone="sky"] .end::before { opacity: 1; }
+.frag, .sub, .title, .note, .mark, .snd, .hud-bottom, .door {
+  transition: color 0.9s ease, text-shadow 0.9s ease, border-color 0.9s ease;
 }
 
 * { box-sizing: border-box; }
@@ -71,10 +97,10 @@ body {
   color: var(--ink-soft);
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 10px var(--halo);
+  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
   pointer-events: none;
 }
-.mark { font: italic 400 1.35rem/1 var(--f-serif); color: var(--ink); text-decoration: none; text-shadow: 0 0 14px var(--halo); }
+.mark { font: italic 400 1.35rem/1 var(--f-serif); color: var(--ink); text-decoration: none; text-shadow: 0 0 2px var(--halo), 0 0 10px var(--halo), 0 0 20px var(--halo-soft); }
 .snd {
   padding: 4px 0;
   border: 0;
@@ -83,7 +109,7 @@ body {
   letter-spacing: 0.04em;
   color: var(--ink-soft);
   cursor: pointer;
-  text-shadow: 0 0 10px var(--halo);
+  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
 }
 .snd:hover { color: var(--ink); }
 .snd[aria-pressed="true"] { color: var(--cobalt); }
@@ -99,7 +125,7 @@ main { position: relative; z-index: 2; }
   color: var(--ink);
   white-space: pre-line;
   text-wrap: balance;
-  text-shadow: 0 0 22px var(--halo), 0 0 6px var(--halo);
+  text-shadow: 0 0 2px var(--halo), 0 0 7px var(--halo), 0 0 18px var(--halo), 0 0 36px var(--halo-soft);
 }
 .frag { position: absolute; max-width: min(24ch, calc(100vw - 32px)); }
 .note {
@@ -107,7 +133,7 @@ main { position: relative; z-index: 2; }
   font: 300 0.78rem/1.4 var(--f-mono);
   letter-spacing: 0.04em;
   color: var(--ink-soft);
-  text-shadow: 0 0 10px var(--halo);
+  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 16px var(--halo-soft);
 }
 .st > .note { position: absolute; }
 .at-l { left: var(--gutter-l); }
@@ -125,7 +151,7 @@ main { position: relative; z-index: 2; }
   letter-spacing: 0.08em;
   margin-right: -0.08em;
   color: var(--ink);
-  text-shadow: 0 0 40px var(--halo), 0 0 10px var(--halo);
+  text-shadow: 0 0 3px var(--halo), 0 0 12px var(--halo), 0 0 44px var(--halo-soft);
 }
 .st-0 .note { margin-top: 10px; }
 
@@ -139,11 +165,12 @@ main { position: relative; z-index: 2; }
   text-decoration: none;
   border-bottom: 1px solid var(--ink-soft);
   padding-bottom: 2px;
-  text-shadow: 0 0 14px var(--halo);
+  text-shadow: 0 0 2px var(--halo), 0 0 8px var(--halo), 0 0 18px var(--halo-soft);
 }
 .door::after { content: "\00a0\2192"; }
 .door.stay::after { content: "\00a0\2191"; }
 .door:hover { color: var(--cobalt); border-color: var(--cobalt); }
+html[data-zone="sky"] .door:hover { color: #cfe0ff; border-color: #cfe0ff; }
 
 /* ---------- the words glitching ---------- */
 .glitch { animation: jitter 0.11s steps(2) infinite; }

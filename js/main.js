@@ -173,7 +173,7 @@ async function start() {
   window.addEventListener('pointercancel', function () { clearTimeout(holdTimer); holding = false; down = null; });
   window.addEventListener('contextmenu', function (e) { if (holding || down) e.preventDefault(); });
 
-  let u = 0, last = performance.now(), whiteIntro = 1, ascii = 0, nextDrip = 3, hudAt = 0, slow = 0, slowN = 0;
+  let u = 0, last = performance.now(), whiteIntro = 1, ascii = 0, nextDrip = 3, hudAt = 0, slow = 0, slowN = 0, skyAttr = '';
   // ?debug in the address: handles for looking at the rare moments on purpose
   if (/[?&]debug\b/.test(location.search)) {
     window.__limbo = {
@@ -219,9 +219,11 @@ async function start() {
     if (veilDone) whiteIntro = Math.max(0, whiteIntro - dt / 2.4);
     flash = Math.max(0, flash - dt * 0.7);
     const passing = Math.exp(-Math.pow((info.z + 215) / 4, 2));
-    const settle = Math.min(1, Math.max(0, (u - 0.94) / 0.06)) * 0.5; // at the very end the sky pales so the last words can be read
     const U = post.uniforms;
-    U.uWhite.value = Math.min(1, Math.max(whiteIntro, flash, passing * 0.92, settle));
+    U.uWhite.value = Math.min(1, Math.max(whiteIntro, flash, passing * 0.92));
+    // the words change colour with the place: dark ink on white, white with a blue glow in the sky
+    const zoneAttr = info.zone.dots > 0.5 ? 'sky' : '';
+    if (zoneAttr !== skyAttr) { skyAttr = zoneAttr; if (zoneAttr) document.documentElement.setAttribute('data-zone', zoneAttr); else document.documentElement.removeAttribute('data-zone'); }
     U.uTime.value = t; U.uGlitch.value = glitch; U.uAscii.value = ascii; U.uDots.value = info.zone.dots;
 
     renderer.setRenderTarget(rt);
