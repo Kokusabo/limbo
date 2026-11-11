@@ -57,13 +57,28 @@ body {
   padding-left: var(--gutter-l);
   padding-right: var(--gutter-r);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   cursor: pointer;
   transition: opacity 1.4s ease, visibility 0s linear 1.4s;
 }
 .veil pre { margin: 0; font: 300 clamp(12px, 1.4vw, 15px)/1.7 var(--f-mono); color: var(--ink-soft); white-space: pre-wrap; }
-.veil-go { color: var(--ink); animation: blink 1.1s steps(1) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
+/* the way in: one button, breathing slowly */
+.sleep {
+  margin-top: 30px;
+  padding: 0.28em 0.75em 0.36em;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: italic 400 clamp(1.7rem, 3.6vw, 2.6rem)/1 var(--f-serif);
+  cursor: pointer;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+.sleep:hover, .sleep:focus-visible { background: var(--cobalt); }
+.sleep[hidden], .sleep-note[hidden] { display: none; }
+.sleep-note { margin: 12px 0 0; font: 400 0.74rem/1.4 var(--f-mono); letter-spacing: 0.04em; color: var(--ink-soft); }
+@keyframes breathe { 50% { opacity: 0.62; } }
 .veil.off { opacity: 0; visibility: hidden; }
 .veil.gone { display: none; }
 
@@ -235,4 +250,5 @@ main { position: relative; z-index: 2; transition: opacity 0.8s ease; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .sleep { animation: none; }
 }

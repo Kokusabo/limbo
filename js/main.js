@@ -22,7 +22,7 @@ const visitorsEl = $('#visitors');
 if (visitorsEl && visits > 1) visitorsEl.textContent = 'visitors today: 1. it is always you.';
 
 /* ---------- waking up ---------- */
-const veil = $('#veil'), vlog = $('#veil-log');
+const veil = $('#veil'), vlog = $('#veil-log'), sleepBtn = $('#sleep');
 const LINES = ['> sleep detected', '> looking for the way back ........ none', '> loading layer 0', '> there is no layer 1'];
 if (visits > 1) LINES.push('> visit ' + visits, '> welcome back'); else LINES.push('> welcome');
 let veilDone = false;
@@ -34,11 +34,12 @@ function liftVeil() {
 }
 (function type(i) {
   if (veilDone) return;
-  if (i >= LINES.length) { const p = document.createElement('span'); p.className = 'veil-go'; p.textContent = '> touch to fall asleep'; vlog.appendChild(p); return; }
+  if (i >= LINES.length) { sleepBtn.hidden = false; $('#sleep-note').hidden = false; return; }
   vlog.textContent += LINES[i] + '\n';
   setTimeout(function () { type(i + 1); }, i === 1 ? 640 : rand(200, 340));
 })(0);
 veil.addEventListener('pointerdown', liftVeil);
+sleepBtn.addEventListener('click', liftVeil);
 
 /* ---------- sound ---------- */
 // on unless it was turned off on an earlier visit; it can only begin at the first touch or key
