@@ -53,7 +53,7 @@ export function createSound() {
     [220, 329.63, 493.88, 554.37].forEach(function (f, i) {
       [-4, 4].forEach(function (cents) {
         const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.detune.value = cents + i;
-        const g = gain(0.05 / (1 + i * 0.4)); o.connect(g); g.connect(G.pad); o.start();
+        const g = gain(0.085 / (1 + i * 0.3)); o.connect(g); g.connect(G.pad); o.start();
       });
     });
     const trem = ac.createOscillator(), tg = gain(0.3); trem.frequency.value = 0.07; trem.connect(tg); tg.connect(G.pad.gain); trem.start();
@@ -74,11 +74,11 @@ export function createSound() {
   function setZone(w) {
     if (!ac || !on) return;
     const t = ac.currentTime, k = 0.8;
-    G.air.gain.setTargetAtTime(0.05 + w.baths * 0.05 + w.chapel * 0.04, t, k);
-    G.water.gain.setTargetAtTime(w.baths * 0.16, t, k);
-    G.wind.gain.setTargetAtTime(w.field * 0.2 + w.sky * 0.06, t, k);
-    G.pad.gain.setTargetAtTime(0.5 + w.chapel * 0.3 - w.sky * 0.2, t, k);
-    G.choir.gain.setTargetAtTime(w.chapel * 1.0 + w.sky * 0.3, t, k);
+    G.air.gain.setTargetAtTime(0.09 + w.baths * 0.07 + w.chapel * 0.05, t, k);
+    G.water.gain.setTargetAtTime(w.baths * 0.3, t, k);
+    G.wind.gain.setTargetAtTime(w.field * 0.32 + w.sky * 0.1, t, k);
+    G.pad.gain.setTargetAtTime(0.75 + w.chapel * 0.3 - w.sky * 0.2, t, k);
+    G.choir.gain.setTargetAtTime(w.chapel * 1.4 + w.sky * 0.4, t, k);
   }
 
   function blip(dur, fill, vol, wetToo) {
@@ -117,11 +117,48 @@ export function createSound() {
     }, 0.16 + strength * 0.12, false);
   }
 
+  // falling asleep: three soft bells going down, in the long echo
+  function chime() {
+    if (!ac || !on) return;
+    [1318.5, 987.8, 830.6].forEach(function (f, i) {
+      const t0 = ac.currentTime + 0.05 + i * 0.32, o = ac.createOscillator(), o2 = ac.createOscillator(), g = gain(0);
+      o.frequency.value = f; o2.frequency.value = f * 2.01;
+      const g2 = gain(0.25); o2.connect(g2); g2.connect(g); o.connect(g);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.16, t0 + 0.012); g.gain.setTargetAtTime(0, t0 + 0.02, 0.5);
+      g.connect(master); g.connect(verb);
+      o.start(t0); o2.start(t0); o.stop(t0 + 3); o2.stop(t0 + 3);
+    });
+  }
+
+  // an iPhone with the ring switch on silent mutes sound made in the page, unless the page says
+  // it is playing something on purpose, or a sound element has played once from a touch
+  let unlocked = false, trying = false;
+  function unlockPhone() {
+    if (unlocked || trying) return;
+    trying = true;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* older phones */ }
+    try {
+      const sr = 8000, n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+      const str = function (o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+      str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true);
+      v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, n * 2, true);
+      const el = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+      el.setAttribute('playsinline', '');
+      const pr = el.play();
+      if (pr && pr.then) pr.then(function () { unlocked = true; trying = false; }, function () { trying = false; });
+      else unlocked = true;
+    } catch (e) { unlocked = true; }
+  }
+
+  let chimed = false;
   function setOn(v) {
+    if (v) unlockPhone();
     if (!ac && !build()) return false;
     if (ac.state !== 'running') ac.resume();
     on = v;
-    master.gain.setTargetAtTime(on ? 0.9 : 0, ac.currentTime, 0.6);
+    master.gain.setTargetAtTime(on ? 1 : 0, ac.currentTime, 0.4);
+    if (on && !chimed) { chimed = true; chime(); }
     return on;
   }
   return {

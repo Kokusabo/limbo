@@ -3,7 +3,7 @@
 import * as THREE from '../vendor/three.module.min.js';
 import { createWorld } from './world.js?v=5';
 import { createPost } from './post.js?v=2';
-import { createSound } from './sound.js?v=2';
+import { createSound } from './sound.js?v=3';
 
 const $ = function (s) { return document.querySelector(s); };
 const $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
